@@ -795,6 +795,23 @@ def page_admin(cfg):
 # --- MAIN PAGE ROUTING ---
 if __name__ == "__main__":
     cfg = load_cfg()
+    # Show MongoDB and OpenAI connection status at the top
+    db = get_db()
+    mongo_status = "✅ MongoDB Connected" if db is not None else "❌ MongoDB Not Connected"
+    try:
+        api_key = os.getenv("OPENAI_API_KEY", "")
+        openai_status = "❌ OpenAI Not Connected"
+        if api_key:
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key)
+            models = client.models.list()
+            if hasattr(models, "data") and len(models.data) > 0:
+                openai_status = "✅ OpenAI Connected"
+    except Exception:
+        openai_status = "❌ OpenAI Not Connected"
+    st.markdown(f"**MongoDB Status:** {mongo_status}")
+    st.markdown(f"**OpenAI Status:** {openai_status}")
+
     st.write(f"[DEBUG] Main routing. Session role: {st.session_state.get('role')}")
     if not st.session_state.get("role"):
         st.write("[DEBUG] Showing login screen.")
