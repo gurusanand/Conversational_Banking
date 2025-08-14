@@ -697,6 +697,24 @@ def page_admin(cfg):
                 st.write(analysis)
             else:
                 st.info("No discrepancies found in this record.")
-# ...existing code...
+
+# --- MAIN PAGE ROUTING ---
+def main():
+    cfg = load_cfg()
+    # If not logged in, show login screen
+    if not st.session_state.get("role"):
+        login_screen(cfg)
+        return
+    role = st.session_state.get("role")
+    # Show survey for User/Head/Data Infrastructure, admin for Admin
+    if role in ["User", "Head", "Data Infrastructure"]:
+        page_survey(cfg, role)
+    elif role == "Admin":
+        page_admin(cfg)
+    else:
+        st.error("Unknown role. Please login again.")
+
+if __name__ == "__main__":
+    main()
 
 # ...existing code...
