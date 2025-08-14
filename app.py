@@ -1,5 +1,4 @@
 import streamlit as st
-st.write("[DEBUG] App starting.")
 import os, json, time, configparser, re
 from bson import ObjectId
 from dotenv import load_dotenv
@@ -20,7 +19,6 @@ except Exception:
 st.set_page_config(page_title="Conversational Banking – Pre‑POC (v4)", layout="wide")
 
 def load_cfg():
-    st.write("[DEBUG] Loading config.ini...")
     cfg = configparser.ConfigParser()
     try:
         files = cfg.read("config.ini", encoding="utf-8")
@@ -600,106 +598,110 @@ def page_admin(cfg):
                         else:
                             st.error(f"MongoDB error: {e}")
                             rows = []
-                    sel = ""
-                    # --- Restore tabs: Records & Insights and Admin Settings ---
-                    tabs = ["Records & Insights"]
-                    if st.session_state.get("role") == "Admin":
-                        tabs.append("Admin Settings")
-                    tab_objs = st.tabs(tabs)
 
+    # --- Restore tabs: Records & Insights and Admin Settings ---
+    tabs = ["Records & Insights"]
+    if st.session_state.get("role") == "Admin":
+        tabs.append("Admin Settings")
+    tab_objs = st.tabs(tabs)
 
-                    # Records & Insights tab
-                    with tab_objs[tabs.index("Records & Insights")]:
-                        # rows is always defined above
-                        if rows and isinstance(rows, list) and len(rows) > 0:
-                            df = pd.DataFrame([
-                                {
-                                    "id": str(r.get("_id")),
-                                    "org": (r.get("org") or {}).get("name", ""),
-                                    "submitted_by": r.get("submitted_by", ""),
-                                    "status": r.get("status", ""),
-                                    "created_at": r.get("created_at", "")
-                                }
-                                for r in rows
-                            ])
-                            st.dataframe(df, use_container_width=True)
-                            sel = st.selectbox("Open record", options=[""] + df["id"].tolist())
-                        else:
-                            sel = ""
-                        if rows:
-                            df_data = []
-                            for r in rows:
-                                df_data.append({
-                                    "id": str(r.get("_id")),
-                                    "org": (r.get("org") or {}).get("name", ""),
-                                    "submitted_by": r.get("submitted_by", ""),
-                                    "status": r.get("status", ""),
-                                    "created_at": r.get("created_at", "")
-                                })
-                            df = pd.DataFrame(df_data)
-                            st.dataframe(df, use_container_width=True)
-                            sel = st.selectbox("Open record", options=[""] + df["id"].tolist())
-        sel = st.selectbox("Open record", options=[""] + df["id"].tolist())
-    if sel:
-        doc = col.find_one({"_id": ObjectId(sel)})
-        st.json(doc)
+    # --- Filters and query definition ---
+    org = st.text_input("Organization contains", key="admin_org_filter")
+    submitter = st.text_input("Submitted by contains", key="admin_submitter_filter")
+    status = st.multiselect("Status", ["submitted","analyzed"], default=[], key="admin_status_filter")
+    limit = st.number_input("Max records", 1, 1000, 100, key="admin_limit_filter")
+    query = {}
+    if org: query["org.name"] = {"$regex": org, "$options":"i"}
+    if submitter: query["submitted_by"] = {"$regex": submitter, "$options":"i"}
+    if status: query["status"] = {"$in": status}
+    try:
+        rows = list(col.find(query).sort("created_at",-1).limit(int(limit)))
+    except Exception as e:
+        import pymongo
+        if isinstance(e, pymongo.errors.ServerSelectionTimeoutError):
+            st.error("MongoDB server is unreachable. Please check your network, URI, and Atlas cluster status.")
+            rows = []
+        else:
+            st.error(f"MongoDB error: {e}")
+            rows = []
 
-        if st.button("Compute Scores (if missing)", key=f"compute_scores_{sel}"):
-            answers = doc.get("answers", {})
-            text_blob = []
-            for f in answers.get("fixed", []): text_blob.append(str(f.get("answer","")))
-            for op in answers.get("open", []):
-                text_blob.append(op.get("answer",""))
-                for fu in op.get("followups", []):
-                    text_blob.append(fu.get("a",""))
-            full = " ".join(text_blob).lower()
-            seeds = {
-                "Business & Strategic Alignment": ["kpi","csat","journey","omni","nps","target","conversion"],
-                "Scope & Use Cases": ["intent","journey","transfer","transaction","multilingual","language"],
-                "Technology & Integration": ["api","middleware","sso","otp","biometric","whatsapp","ivr"],
-                "Risk, Governance & Operations": ["handoff","sla","monitor","feedback","bias","fairness","ethics","content"],
-                "Infrastructure, AI Readiness & Security": ["gpu","h100","a100","mlops","databricks","sagemaker","vertex","gateway","apigee","kong","mulesoft","prometheus","grafana","elastic","dr","ha","sandbox"],
-                "Model & Platform": ["openai","azure","anthropic","cohere","dbrx","llama","embedding","fine-tune"],
-                "Validation & Testing": ["eval","dataset","metrics","red-team","test","qa","sign-off","sandbox"]
-            }
-            pillars = []
-            total = 0
-            for name, kws in seeds.items():
-                hits = sum(1 for kw in kws if kw in full)
-                score = min(1 + hits*2, 20)
-                total += score
-                stage = "Nascent"
-                for thr, lab in [(1,"Nascent"),(5,"Emerging"),(10,"Developing"),(15,"Advanced"),(20,"Leading")]:
-                    if score >= thr: stage = lab
-                pillars.append({"name": name, "score": score, "stage": stage})
-            sc = {"pillars": pillars, "overall": total}
-            col.update_one({"_id": ObjectId(sel)}, {"$set":{"scores": sc, "status":"analyzed"}})
-            st.success("Scores computed and saved.")
-            st.markdown("---")
+    # Records & Insights tab
+    with tab_objs[tabs.index("Records & Insights")]:
+        sel = ""
+        if rows and isinstance(rows, list) and len(rows) > 0:
+            df = pd.DataFrame([
+                {
+                    "id": str(r.get("_id")),
+                    "org": (r.get("org") or {}).get("name", ""),
+                    "submitted_by": r.get("submitted_by", ""),
+                    "status": r.get("status", ""),
+                    "created_at": r.get("created_at", "")
+                }
+                for r in rows
+            ])
+            st.dataframe(df, use_container_width=True)
+            sel = st.selectbox("Open record", options=[""] + df["id"].tolist())
+        if sel:
             doc = col.find_one({"_id": ObjectId(sel)})
             st.json(doc)
 
-        # Always show Discrepancy Check after record selection and score computation
-        st.subheader("Discrepancy Check")
-        fixed_answers = doc.get("answers",{}).get("fixed", [])
-        open_answers = doc.get("answers",{}).get("open", [])
-        all_answers = [(q.get("question",""), str(q.get("answer",""))) for q in fixed_answers] + [(op.get("prompt",""), str(op.get("answer",""))) for op in open_answers]
+            if st.button("Compute Scores (if missing)", key=f"compute_scores_{sel}"):
+                answers = doc.get("answers", {})
+                text_blob = []
+                for f in answers.get("fixed", []): text_blob.append(str(f.get("answer","")))
+                for op in answers.get("open", []):
+                    text_blob.append(op.get("answer",""))
+                    for fu in op.get("followups", []):
+                        text_blob.append(fu.get("a",""))
+                full = " ".join(text_blob).lower()
+                seeds = {
+                    "Business & Strategic Alignment": ["kpi","csat","journey","omni","nps","target","conversion"],
+                    "Scope & Use Cases": ["intent","journey","transfer","transaction","multilingual","language"],
+                    "Technology & Integration": ["api","middleware","sso","otp","biometric","whatsapp","ivr"],
+                    "Risk, Governance & Operations": ["handoff","sla","monitor","feedback","bias","fairness","ethics","content"],
+                    "Infrastructure, AI Readiness & Security": ["gpu","h100","a100","mlops","databricks","sagemaker","vertex","gateway","apigee","kong","mulesoft","prometheus","grafana","elastic","dr","ha","sandbox"],
+                    "Model & Platform": ["openai","azure","anthropic","cohere","dbrx","llama","embedding","fine-tune"],
+                    "Validation & Testing": ["eval","dataset","metrics","red-team","test","qa","sign-off","sandbox"]
+                }
+                pillars = []
+                total = 0
+                for name, kws in seeds.items():
+                    hits = sum(1 for kw in kws if kw in full)
+                    score = min(1 + hits*2, 20)
+                    total += score
+                    stage = "Nascent"
+                    for thr, lab in [(1,"Nascent"),(5,"Emerging"),(10,"Developing"),(15,"Advanced"),(20,"Leading")]:
+                        if score >= thr: stage = lab
+                    pillars.append({"name": name, "score": score, "stage": stage})
+                sc = {"pillars": pillars, "overall": total}
+                col.update_one({"_id": ObjectId(sel)}, {"$set":{"scores": sc, "status":"analyzed"}})
+                st.success("Scores computed and saved.")
+                st.markdown("---")
+                doc = col.find_one({"_id": ObjectId(sel)})
+                st.json(doc)
 
-        # Prepare prompt for OpenAI
-        prompt = """
-        You are an expert survey analyst. Given the following questions and answers from a banking discovery survey, analyze for discrepancies, contradictions, or incomplete responses. For each issue, list:
-        1. The question(s)
-        2. The answer(s)
-        3. The discrepancy or issue found
-        4. Suggestions to resolve or clarify
+            # Always show Discrepancy Check after record selection and score computation
+            st.subheader("Discrepancy Check")
+            fixed_answers = doc.get("answers",{}).get("fixed", [])
+            open_answers = doc.get("answers",{}).get("open", [])
+            all_answers = [(q.get("question",""), str(q.get("answer",""))) for q in fixed_answers] + [(op.get("prompt",""), str(op.get("answer",""))) for op in open_answers]
 
-        Only report issues that are clear, significant, or could impact survey validity. Be concise and specific.
-        """
-        # --- Restore tabs: Records & Insights and Admin Settings ---
-        tabs = ["Records & Insights"]
-        if st.session_state.get("role") == "Admin":
-            tabs.append("Admin Settings")
-        tab_objs = st.tabs(tabs)
+            # Prepare prompt for OpenAI
+            prompt = """
+            You are an expert survey analyst. Given the following questions and answers from a banking discovery survey, analyze for discrepancies, contradictions, or incomplete responses. For each issue, list:
+            1. The question(s)
+            2. The answer(s)
+            3. The discrepancy or issue found
+            4. Suggestions to resolve or clarify
+
+            Only report issues that are clear, significant, or could impact survey validity. Be concise and specific.
+            """
+
+    # Admin Settings tab
+    if "Admin Settings" in tabs:
+        with tab_objs[tabs.index("Admin Settings")]:
+            st.subheader("Admin Settings")
+            st.info("Admin settings features placeholder. Add your settings management here.")
 
         # Records & Insights tab
         with tab_objs[tabs.index("Records & Insights")]:
