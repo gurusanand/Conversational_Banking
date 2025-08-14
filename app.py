@@ -538,6 +538,11 @@ def page_survey(cfg, role):
         st.toast("Scores saved to MongoDB.")
 
 def page_admin(cfg):
+    # --- Diagnostic block for MongoDB connection and config ---
+    st.markdown('---')
+    st.info(f"MongoDB URI: {os.getenv('MONGO_URI')}")
+    st.info(f"MongoDB Database: {os.getenv('MONGO_DATABASE') or os.getenv('MONGO_DB') or cfg['MONGO'].get('db_name','')} (type: {type(db)})")
+    st.info(f"MongoDB Collection: {cfg['MONGO'].get('collection_name','')} (type: {type(col)})")
     col = None
     # cfg is passed as argument, so no need to redefine unless used outside
     sel = ""
