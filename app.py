@@ -725,7 +725,32 @@ def page_admin(cfg):
     if "Admin Settings" in tabs:
         with tab_objs[tabs.index("Admin Settings")]:
             st.subheader("Admin Settings")
-            st.info("Admin settings features placeholder. Add your settings management here.")
+            st.markdown("### Edit Fixed Questions")
+            import json
+            questions = json.loads(cfg["QUESTIONS"]["questions_json"])
+            edited_questions = []
+            with st.form("admin_edit_questions_form"):
+                for q in questions:
+                    st.markdown(f"**{q['id']}** — {q['text']}")
+                    new_text = st.text_area("Question Text", value=q['text'], key=f"admin_qtext_{q['id']}")
+                    new_type = st.selectbox("Type", options=["text","select","multiselect","likert"], index=["text","select","multiselect","likert"].index(q.get("type","text")), key=f"admin_qtype_{q['id']}")
+                    new_required = st.checkbox("Required", value=q.get("required",False), key=f"admin_qreq_{q['id']}")
+                    edited_questions.append({**q, "text": new_text, "type": new_type, "required": new_required})
+                save_btn = st.form_submit_button("Save Changes")
+            if save_btn:
+                cfg["QUESTIONS"]["questions_json"] = json.dumps(edited_questions, ensure_ascii=False)
+                st.success("Questions updated in config (in-memory only; restart to persist).")
+
+            st.markdown("---")
+            st.markdown("### Prompts for Open-Ended Questions")
+            open_prompts = json.loads(cfg["QUESTIONS"].get("open_ended_prompts","[]"))
+            for i, p in enumerate(open_prompts, 1):
+                st.text_area(f"Prompt {i}", value=p, key=f"admin_open_prompt_{i}")
+
+            st.markdown("---")
+            st.markdown("### Dynamic Followups Prompts")
+            st.text_area("Followup System Prompt", value=cfg["DYNAMIC_FOLLOWUPS"].get("followup_system_prompt",""), key="admin_followup_system_prompt")
+            st.text_area("Followup User Template", value=cfg["DYNAMIC_FOLLOWUPS"].get("followup_user_template",""), key="admin_followup_user_template")
 
         # Records & Insights tab
         with tab_objs[tabs.index("Records & Insights")]:
