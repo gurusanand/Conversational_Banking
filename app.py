@@ -910,7 +910,16 @@ def page_admin(cfg):
         if submitter: query["submitted_by"] = {"$regex": submitter, "$options":"i"}
         if status: query["status"] = {"$in": status}
 
-        rows = list(col.find(query).sort("created_at",-1).limit(int(limit)))
+        try:
+            rows = list(col.find(query).sort("created_at",-1).limit(int(limit)))
+        except Exception as e:
+            import pymongo
+            if isinstance(e, pymongo.errors.ServerSelectionTimeoutError):
+                st.error("MongoDB server is unreachable. Please check your network, URI, and Atlas cluster status.")
+                rows = []
+            else:
+                st.error(f"MongoDB error: {e}")
+                rows = []
     sel = ""
     if rows:
         df = pd.DataFrame([{
