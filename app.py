@@ -397,17 +397,20 @@ def page_survey(cfg, role):
             pillars.append({"name": name, "score": score, "stage": stage})
         sc = {"pillars": pillars, "overall": total}
 
+        import unicodedata
+        def to_ascii(text):
+            return unicodedata.normalize('NFKD', str(text)).encode('ascii', 'ignore').decode('ascii')
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", size=12)
-        pdf.cell(0, 10, "Conversational Banking Discovery Insights Report", ln=True, align="C")
+        pdf.cell(0, 10, to_ascii("Conversational Banking Discovery Insights Report"), ln=True, align="C")
         pdf.ln(5)
-        pdf.cell(0, 10, f"Overall Score: {sc['overall']}", ln=True)
-        pdf.cell(0, 10, "Pillar Insights:", ln=True)
+        pdf.cell(0, 10, to_ascii(f"Overall Score: {sc['overall']}"), ln=True)
+        pdf.cell(0, 10, to_ascii("Pillar Insights:"), ln=True)
         for p in sc["pillars"]:
-            pdf.cell(0, 10, f"- {p['name']}: {p['score']} ({p['stage']})", ln=True)
+            pdf.cell(0, 10, to_ascii(f"- {p['name']}: {p['score']} ({p['stage']})"), ln=True)
         pdf.ln(5)
-        pdf.cell(0, 10, "Recommended Next Steps:", ln=True)
+        pdf.cell(0, 10, to_ascii("Recommended Next Steps:"), ln=True)
         # Optionally load next steps from scoring_rules.json if available
         import os, json
         scoring_path = os.path.join(os.path.dirname(__file__), "scoring_rules.json")
@@ -421,11 +424,11 @@ def page_survey(cfg, role):
         for p in sc["pillars"]:
             steps = next_steps.get(p["name"], [])
             if steps:
-                pdf.cell(0, 10, f"{p['name']}:", ln=True)
+                pdf.cell(0, 10, to_ascii(f"{p['name']}:"), ln=True)
                 for s in steps:
-                    pdf.cell(0, 10, f"- {s}", ln=True)
+                    pdf.cell(0, 10, to_ascii(f"- {s}"), ln=True)
         pdf.ln(5)
-        pdf.cell(0, 10, "Discrepancies Found:", ln=True)
+        pdf.cell(0, 10, to_ascii("Discrepancies Found:"), ln=True)
         # Simple discrepancy check (missing/short answers)
         discrepancy_summary = []
         for q in fixed:
@@ -437,12 +440,12 @@ def page_survey(cfg, role):
                 discrepancy_summary.append(f"Missing or too short open-ended answer: {op.get('prompt','')}")
         if discrepancy_summary:
             for issue in discrepancy_summary:
-                pdf.cell(0, 10, f"- {issue}", ln=True)
+                pdf.cell(0, 10, to_ascii(f"- {issue}"), ln=True)
         else:
-            pdf.cell(0, 10, "No discrepancies found in analyzed record.", ln=True)
+            pdf.cell(0, 10, to_ascii("No discrepancies found in analyzed record."), ln=True)
         pdf.ln(5)
-        pdf.cell(0, 10, "How Scores Are Calculated:", ln=True)
-        pdf.multi_cell(0, 10, "Scores are calculated by scanning all answers for pillar-specific keywords. Each keyword hit adds points to the relevant pillar, with a base score of 1 per pillar. The total score per pillar is capped at 20. Pillar stages are assigned based on thresholds: Nascent (1+), Emerging (5+), Developing (10+), Advanced (15+), Leading (20). The overall score is the sum of all pillar scores.")
+        pdf.cell(0, 10, to_ascii("How Scores Are Calculated:"), ln=True)
+        pdf.multi_cell(0, 10, to_ascii("Scores are calculated by scanning all answers for pillar-specific keywords. Each keyword hit adds points to the relevant pillar, with a base score of 1 per pillar. The total score per pillar is capped at 20. Pillar stages are assigned based on thresholds: Nascent (1+), Emerging (5+), Developing (10+), Advanced (15+), Leading (20). The overall score is the sum of all pillar scores."))
         import unicodedata
         def to_ascii(text):
             return unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
