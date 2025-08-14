@@ -446,9 +446,9 @@ def page_survey(cfg, role):
         import unicodedata
         def to_ascii(text):
             return unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
-        # Clean all text before adding to PDF
-        for i in range(len(pdf.pages)):
-            pdf.pages[i] = to_ascii(pdf.pages[i])
+        # Use to_ascii for all text added to PDF
+        # Example: pdf.cell(0, 10, to_ascii("text"), ln=True)
+        # If you want to clean all text, wrap all pdf.cell/multi_cell calls with to_ascii()
         pdf_bytes = pdf.output(dest='S').encode('latin1')
         b64 = base64.b64encode(pdf_bytes).decode()
         href = f'<a href="data:application/pdf;base64,{b64}" download="CB_Discovery_Insights_Report.pdf">Download PDF Report</a>'
