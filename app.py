@@ -534,100 +534,179 @@ def page_admin(cfg):
         def to_ascii(text):
             return str(text).encode('ascii', 'ignore').decode()
     db = get_db()
+
+    # --- Restore full admin features ---
+    def _header():
+        left, mid, right = st.columns([0.25,0.5,0.25])
+        with left:
+            st.caption("Conversational Banking – Admin Console (v4)")
+        with right:
+            if st.button("Logout", help="Click to end your session."):
+                for k in ["role","username","current_doc_id","fixed_answers","open_blocks"]:
+                    if k in st.session_state:
+                        del st.session_state[k]
+                st.rerun()
+
+    _header()
+    rows = []
+    db = get_db()
     col = None
-    if db is not None:
-        col = db[cfg["MONGO"]["collection_name"]]
-        # MongoDB diagnostics block
-        try:
-            test_doc = col.find_one()
-            if test_doc is not None:
-                st.success("MongoDB test query succeeded. Collection is accessible.")
-            else:
-                st.info("MongoDB connected, but collection is empty or not accessible.")
-        except Exception as e:
-            import pymongo
-            if isinstance(e, pymongo.errors.ServerSelectionTimeoutError):
-                st.error("MongoDB server is unreachable during test query. Please check your network, URI, and Atlas cluster status.")
-            else:
-                st.error(f"MongoDB test query error: {e}")
-    # Only show Admin Console header and tabs once
-    if not st.session_state.get("admin_tabs_rendered"):
-        st.subheader("Admin Console")
-        tabs = ["Records & Insights"]
-        if st.session_state.get("role") == "Admin":
-            tabs.append("Admin Settings")
-        tab_objs = st.tabs(tabs)
-        st.session_state["admin_tabs_rendered"] = True
+    if db is None:
+        st.info("MONGO_URI not set or pymongo missing — admin features disabled.")
     else:
-        tabs = ["Records & Insights"]
-        if st.session_state.get("role") == "Admin":
-            tabs.append("Admin Settings")
-        tab_objs = st.tabs(tabs)
-    # Only show tab content for the selected tab
-    with tab_objs[tabs.index("Records & Insights")]:
-        # ...existing code for Records & Insights tab...
-        import io
-        from fpdf import FPDF
-        import base64
-        sel = ""
-        rows = []
-        # Insights & Next Steps Section
-        if sel:
-            st.subheader("Insights & Next Steps")
-            if rows:
-                # Find the most recent analyzed record with scores
-                analyzed = [r for r in rows if r.get("scores")]
-                # Discrepancy summary across all analyzed records
-                discrepancy_summary = []
-                for r in analyzed:
-                    issues = []
-                    for q in r.get("answers",{}).get("fixed",[]):
-                        ans = q.get("answer","")
-                        if not ans or len(str(ans).strip()) < 3:
-                            issues.append(f"Missing or too short answer for question: {q.get('question','')}")
-                for op in r.get("answers",{}).get("open",[]):
-                    if not op.get("answer","") or len(str(op.get("answer","")).strip()) < 3:
-                        issues.append(f"Missing or too short open-ended answer: {op.get('prompt','')}")
-                if issues:
-                    discrepancy_summary.append({"id": str(r.get("_id")), "issues": issues})
-            if discrepancy_summary:
-                st.markdown("### Discrepancies Found:")
-                for d in discrepancy_summary:
-                    st.markdown(f"**Record {d['id']}**:")
-                    for issue in d["issues"]:
-                        st.markdown(f"- {issue}")
+        if cfg and "MONGO" in cfg and "collection_name" in cfg["MONGO"]:
+            col = db[cfg["MONGO"]["collection_name"]]
+        else:
+            col = None
+        # Use same connection test as user role
+        if st.button("Test Mongo Connectivity", key="admin_test_mongo_connectivity"):
+            if db is not None:
+                st.success("MongoDB connection test: Success!")
             else:
-                st.markdown("No discrepancies found in analyzed records.")
+                st.error("MongoDB not connected.")
+        with st.expander("Filters"):
+            org = st.text_input("Organization contains")
+            submitter = st.text_input("Submitted by contains")
+            status = st.multiselect("Status", ["submitted","analyzed"], default=[])
+            limit = st.number_input("Max records", 1, 1000, 100)
 
-        # Score calculation explanation
-        st.markdown("### How Scores Are Calculated:")
-        st.markdown("""
-        Scores are calculated by scanning all answers for pillar-specific keywords. Each keyword hit adds points to the relevant pillar, with a base score of 1 per pillar. The total score per pillar is capped at 20. Pillar stages are assigned based on thresholds:
-        - Nascent: 1+
-        - Emerging: 5+
-        - Developing: 10+
-        - Advanced: 15+
-        - Leading: 20
-                    st.markdown("No discrepancies found in analyzed records.")
-        """)
+        query = {}
+        if org: query["org.name"] = {"$regex": org, "$options":"i"}
+        if submitter: query["submitted_by"] = {"$regex": submitter, "$options":"i"}
+        if status: query["status"] = {"$in": status}
 
-        # PDF report generation
-        if st.button("Generate PDF Report"):
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Arial", size=12)
-            pdf.cell(0, 10, to_ascii("Conversational Banking Discovery Insights Report"), ln=True, align="C")
+    try:
+        rows = list(col.find(query).sort("created_at",-1).limit(int(limit)))
+    except Exception as e:
+        import pymongo
+        if isinstance(e, pymongo.errors.ServerSelectionTimeoutError):
+            st.error("MongoDB server is unreachable. Please check your network, URI, and Atlas cluster status.")
+            rows = []
+        else:
+            st.error(f"MongoDB error: {e}")
+            rows = []
+    sel = ""
+    if rows:
+        df = pd.DataFrame([{
+            "id": str(r.get("_id")),
+            "org": (r.get("org") or {}).get("name",""),
+            "submitted_by": r.get("submitted_by",""),
+            "status": r.get("status",""),
+            "created_at": r.get("created_at","")
+        } for r in rows])
+        st.dataframe(df, use_container_width=True)
+        sel = st.selectbox("Open record", options=[""] + df["id"].tolist())
+    if sel:
+        doc = col.find_one({"_id": ObjectId(sel)})
+        st.json(doc)
+
+        if st.button("Compute Scores (if missing)", key=f"compute_scores_{sel}"):
+            answers = doc.get("answers", {})
+            text_blob = []
+            for f in answers.get("fixed", []): text_blob.append(str(f.get("answer","")))
+            for op in answers.get("open", []):
+                text_blob.append(op.get("answer",""))
+                for fu in op.get("followups", []):
+                    text_blob.append(fu.get("a",""))
+            full = " ".join(text_blob).lower()
+            seeds = {
+                "Business & Strategic Alignment": ["kpi","csat","journey","omni","nps","target","conversion"],
+                "Scope & Use Cases": ["intent","journey","transfer","transaction","multilingual","language"],
+                "Technology & Integration": ["api","middleware","sso","otp","biometric","whatsapp","ivr"],
+                "Risk, Governance & Operations": ["handoff","sla","monitor","feedback","bias","fairness","ethics","content"],
+                "Infrastructure, AI Readiness & Security": ["gpu","h100","a100","mlops","databricks","sagemaker","vertex","gateway","apigee","kong","mulesoft","prometheus","grafana","elastic","dr","ha","sandbox"],
+                "Model & Platform": ["openai","azure","anthropic","cohere","dbrx","llama","embedding","fine-tune"],
+                "Validation & Testing": ["eval","dataset","metrics","red-team","test","qa","sign-off","sandbox"]
+            }
+            pillars = []
+            total = 0
+            for name, kws in seeds.items():
+                hits = sum(1 for kw in kws if kw in full)
+                score = min(1 + hits*2, 20)
+                total += score
+                stage = "Nascent"
+                for thr, lab in [(1,"Nascent"),(5,"Emerging"),(10,"Developing"),(15,"Advanced"),(20,"Leading")]:
+                    if score >= thr: stage = lab
+                pillars.append({"name": name, "score": score, "stage": stage})
+            sc = {"pillars": pillars, "overall": total}
+            col.update_one({"_id": ObjectId(sel)}, {"$set":{"scores": sc, "status":"analyzed"}})
+            st.success("Scores computed and saved.")
+            st.markdown("---")
+            doc = col.find_one({"_id": ObjectId(sel)})
+            st.json(doc)
+
+        # Always show Discrepancy Check after record selection and score computation
+        st.subheader("Discrepancy Check")
+        fixed_answers = doc.get("answers",{}).get("fixed", [])
+        open_answers = doc.get("answers",{}).get("open", [])
+        all_answers = [(q.get("question",""), str(q.get("answer",""))) for q in fixed_answers] + [(op.get("prompt",""), str(op.get("answer",""))) for op in open_answers]
+
+        # Prepare prompt for OpenAI
+        prompt = """
+        You are an expert survey analyst. Given the following questions and answers from a banking discovery survey, analyze for discrepancies, contradictions, or incomplete responses. For each issue, list:
+        1. The question(s)
+        2. The answer(s)
+        3. A clear explanation of why it is a discrepancy (e.g., contradiction, vague, inconsistent, or missing info).
+        Be specific and use banking context. Return your analysis as a numbered list.
+        """
+        qa_blob = "\n".join([f"Q: {q}\nA: {a}" for q, a in all_answers])
+        full_prompt = prompt + "\n" + qa_blob
+
+        analysis = None
+        api_key = os.getenv("OPENAI_API_KEY", "")
+        if OpenAI and api_key and len(all_answers) > 0:
+            try:
+                client = OpenAI(api_key=api_key)
+                resp = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{"role": "user", "content": full_prompt}],
+                    max_tokens=500,
+                    temperature=0.2
+                )
+                analysis = resp.choices[0].message.content.strip()
+            except Exception as e:
+                analysis = f"OpenAI analysis failed: {e}"
+        st.markdown("### Discrepancy Summary (AI Analysis):")
+        if analysis and analysis.strip() and not analysis.lower().startswith("no discrepancies"):
+            st.write(analysis)
+        else:
+            st.info("No discrepancies found in this record.")
+
+    # Only show Aggregates and Insights & Next Steps if a record is selected
+    if sel:
+        st.subheader("Aggregates")
+        if rows:
+            df = pd.DataFrame([{
+                "status": r.get("status",""),
+                "created_at": r.get("created_at",""),
+                "scores": r.get("scores")
+            } for r in rows])
+            st.bar_chart(df["status"].value_counts())
+            pill_avgs = {}
+            for r in rows:
+                sc = r.get("scores")
+                if sc and "pillars" in sc:
+                    for p in sc["pillars"]:
+                        pill_avgs.setdefault(p["name"], []).append(p["score"])
+            if pill_avgs:
+                avg_df = pd.DataFrame([{"Pillar": k, "AvgScore": sum(v)/len(v)} for k,v in pill_avgs.items()])
+                st.bar_chart(avg_df.set_index("Pillar"))
+
+        # Insights & Next Steps Section
+        st.subheader("Insights & Next Steps")
+        if rows:
+            # Find the most recent analyzed record with scores
+            analyzed = [r for r in rows if r.get("scores")]
             if analyzed:
                 latest = analyzed[0]
                 scores = latest["scores"]
                 pillars = scores.get("pillars", [])
                 overall = scores.get("overall", 0)
-                pdf.cell(0, 10, to_ascii(f"Overall Score: {overall}"), ln=True)
-                pdf.cell(0, 10, to_ascii("Pillar Insights:"), ln=True)
+                st.markdown(f"**Overall Score:** {overall}")
+                st.markdown("### Pillar Insights:")
                 for p in pillars:
-                    pdf.cell(0, 10, to_ascii(f"- {p['name']}: {p['score']} ({p['stage']})"), ln=True)
-                pdf.ln(5)
-                pdf.cell(0, 10, to_ascii("Recommended Next Steps:"), ln=True)
+                    st.markdown(f"- **{p['name']}**: {p['score']} ({p['stage']})")
+                # Next Steps from scoring_rules.json if available
                 scoring_path = os.path.join(os.path.dirname(__file__), "scoring_rules.json")
                 next_steps = {}
                 try:
@@ -636,85 +715,31 @@ def page_admin(cfg):
                         next_steps = scoring.get("next_steps", {})
                 except Exception:
                     next_steps = {}
+                st.markdown("### Recommended Next Steps:")
                 for p in pillars:
                     steps = next_steps.get(p["name"], [])
                     if steps:
-                        pdf.cell(0, 10, to_ascii(f"{p['name']}:"), ln=True)
+                        st.markdown(f"**{p['name']}**:")
                         for s in steps:
-                            pdf.cell(0, 10, to_ascii(f"- {s}"), ln=True)
-            pdf.ln(5)
-            pdf.cell(0, 10, to_ascii("Discrepancies Found:"), ln=True)
-            if 'discrepancy_summary' in locals() and discrepancy_summary:
-                for d in discrepancy_summary:
-                    pdf.cell(0, 10, to_ascii(f"Record {d['id']}:"), ln=True)
-                    for issue in d["issues"]:
-                        pdf.cell(0, 10, to_ascii(f"- {issue}"), ln=True)
+                            st.markdown(f"- {s}")
             else:
-                pdf.cell(0, 10, to_ascii("No discrepancies found in analyzed records."), ln=True)
-            pdf.cell(0, 10, to_ascii("How Scores Are Calculated:"), ln=True)
-            pdf.multi_cell(0, 10, to_ascii("Scores are calculated by scanning all answers for pillar-specific keywords. Each keyword hit adds points to the relevant pillar, with a base score of 1 per pillar. The total score per pillar is capped at 20. Pillar stages are assigned based on thresholds: Nascent (1+), Emerging (5+), Developing (10+), Advanced (15+), Leading (20). The overall score is the sum of all pillar scores."))
-            # Save PDF to memory and provide download link
-            pdf_bytes = pdf.output(dest='S').encode('latin1')
-            b64 = base64.b64encode(pdf_bytes).decode()
-            href = f'<a href="data:application/pdf;base64,{b64}" download="CB_Discovery_Insights_Report.pdf">Download PDF Report</a>'
-            st.markdown(href, unsafe_allow_html=True)
-
-        # Discrepancy Check (AI analysis) after Recommended Next Steps
-        if sel:
-            st.subheader("Discrepancy Check")
-            doc = col.find_one({"_id": ObjectId(sel)})
-            fixed_answers = doc.get("answers",{}).get("fixed", [])
-            open_answers = doc.get("answers",{}).get("open", [])
-            all_answers = [(q.get("question",""), str(q.get("answer",""))) for q in fixed_answers] + [(op.get("prompt",""), str(op.get("answer",""))) for op in open_answers]
-
-            # Prepare prompt for OpenAI
-            prompt = """
-            You are an expert survey analyst. Given the following questions and answers from a banking discovery survey, analyze for discrepancies, contradictions, or incomplete responses. For each issue, list:
-            1. The question(s)
-            2. The answer(s)
-            3. A clear explanation of why it is a discrepancy (e.g., contradiction, vague, inconsistent, or missing info).
-            Be specific and use banking context. Return your analysis as a numbered list.
-            """
-            qa_blob = "\n".join([f"Q: {q}\nA: {a}" for q, a in all_answers])
-            full_prompt = prompt + "\n" + qa_blob
-
-            analysis = None
-            api_key = os.getenv("OPENAI_API_KEY", "")
-            if OpenAI and api_key and len(all_answers) > 0:
-                try:
-                    client = OpenAI(api_key=api_key)
-                    resp = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[{"role": "user", "content": full_prompt}],
-                        max_tokens=500,
-                        temperature=0.2
-                    )
-                    analysis = resp.choices[0].message.content.strip()
-                except Exception as e:
-                    analysis = f"OpenAI analysis failed: {e}"
-            st.markdown("### Discrepancy Summary (AI Analysis):")
-            if analysis and analysis.strip() and not analysis.lower().startswith("no discrepancies"):
-                st.write(analysis)
-            else:
-                st.info("No discrepancies found in this record.")
-
-# --- MAIN PAGE ROUTING ---
-def main():
-    cfg = load_cfg()
-    # If not logged in, show login screen
-    if not st.session_state.get("role"):
-        login_screen(cfg)
-        return
-    role = st.session_state.get("role")
-    # Show survey for User/Head/Data Infrastructure, admin for Admin
-    if role in ["User", "Head", "Data Infrastructure"]:
+                st.info("No analyzed records with scores found for insights.")
         page_survey(cfg, role)
     elif role == "Admin":
         page_admin(cfg)
     else:
         st.error("Unknown role. Please login again.")
 
+# --- MAIN PAGE ROUTING ---
 if __name__ == "__main__":
-    main()
-
-# ...existing code...
+    cfg = load_cfg()
+    if not st.session_state.get("role"):
+        login_screen(cfg)
+    else:
+        role = st.session_state.get("role")
+        if role in ["User", "Head", "Data Infrastructure"]:
+            page_survey(cfg, role)
+        elif role == "Admin":
+            page_admin(cfg)
+        else:
+            st.error("Unknown role. Please login again.")
