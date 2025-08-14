@@ -664,7 +664,7 @@ def page_admin(cfg):
                 for r in rows
             ])
             st.dataframe(df, use_container_width=True)
-            sel = st.selectbox("Open record", options=[""] + df["id"].tolist())
+            sel = st.selectbox("Open record", options=[""] + df["id"].tolist(), key="admin_open_record_selectbox")
         if sel:
             doc = col.find_one({"_id": ObjectId(sel)})
             st.json(doc)
