@@ -1,0 +1,132 @@
+{
+  "pillars": [
+    {
+      "name": "Business & Strategic Alignment",
+      "keywords_positive": [
+        "kpi",
+        "csat",
+        "containment",
+        "revenue",
+        "target",
+        "omni-channel",
+        "journey",
+        "persona"
+      ],
+      "weight": 1.0
+    },
+    {
+      "name": "Scope & Use Cases",
+      "keywords_positive": [
+        "intent",
+        "journey",
+        "transfer",
+        "transactional",
+        "multilingual",
+        "compliance",
+        "pci",
+        "mas",
+        "gdpr",
+        "integration"
+      ],
+      "weight": 1.0
+    },
+    {
+      "name": "Technology & Integration",
+      "keywords_positive": [
+        "api",
+        "middleware",
+        "azure",
+        "aws",
+        "gcp",
+        "openai",
+        "dialogflow",
+        "lex",
+        "sso",
+        "otp",
+        "biometric",
+        "voice",
+        "ivr",
+        "whatsapp"
+      ],
+      "weight": 1.0
+    },
+    {
+      "name": "Risk, Governance & Operations",
+      "keywords_positive": [
+        "handoff",
+        "human",
+        "monitoring",
+        "improvement",
+        "bias",
+        "ethics",
+        "fairness",
+        "timeline",
+        "ops",
+        "slo",
+        "sla"
+      ],
+      "weight": 1.0
+    },
+    {
+      "name": "Infrastructure, AI Readiness & Security",
+      "keywords_positive": [
+        "gpu",
+        "h100",
+        "a100",
+        "tpu",
+        "mlops",
+        "databricks",
+        "sagemaker",
+        "vertex",
+        "ai security",
+        "api gateway",
+        "apigee",
+        "kong",
+        "mulesoft",
+        "observability",
+        "prometheus",
+        "grafana",
+        "datadog",
+        "elastic",
+        "ha",
+        "dr",
+        "sandbox"
+      ],
+      "weight": 1.0
+    }
+  ],
+  "scoring": {
+    "keyword_hit_points": 2,
+    "base_per_answer": 1,
+    "max_per_pillar": 20,
+    "thresholds": {
+      "1": "Nascent",
+      "5": "Emerging",
+      "10": "Developing",
+      "15": "Advanced",
+      "20": "Leading"
+    }
+  },
+  "next_steps": {
+    "Business & Strategic Alignment": [
+      "Define clear KPIs (CSAT, containment rate, cost/revenue impact).",
+      "Map top customer journeys and success metrics across channels."
+    ],
+    "Scope & Use Cases": [
+      "Prioritize 5–7 intents for POC with definition of done and test data.",
+      "Decide on multilingual scope and regulatory constraints for POC."
+    ],
+    "Technology & Integration": [
+      "Inventory available APIs; define auth (SSO/OTP/biometrics) and rate limits.",
+      "Choose LLM/NLP stack and guardrails for safe transactions."
+    ],
+    "Risk, Governance & Operations": [
+      "Design escalation to human; add content governance and response review loop.",
+      "Set up monitoring, feedback tagging, and weekly model evaluation."
+    ],
+    "Infrastructure, AI Readiness & Security": [
+      "Provision GPU/LLM access and MLOps; enable observability and DR/HA.",
+      "Harden GenAI security controls (PII redaction, prompt injection defenses)."
+    ]
+  }
+}

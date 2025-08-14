@@ -1,0 +1,182 @@
+[
+  {
+    "id": "Q01",
+    "text": "What is the primary business goal of this conversational banking chatbot? (e.g., customer service, Policiec and procedures, upselling, account servicing, lead generation)",
+    "category": "Business & Strategic Alignment",
+    "type": "text"
+  },
+  {
+    "id": "Q02",
+    "text": "Which banking products and services should the chatbot support in the POC? (Retail, corporate, wealth, cards, loans, etc.)",
+    "category": "Business & Strategic Alignment",
+    "type": "text"
+  },
+  {
+    "id": "Q03",
+    "text": "What KPIs will define success for this POC? (e.g., CSAT, containment rate, cost savings, revenue uplift)",
+    "category": "Business & Strategic Alignment",
+    "type": "text"
+  },
+  {
+    "id": "Q04",
+    "text": "Who is the target audience? (Existing customers, prospects, high-net-worth clients, SMEs, etc.)",
+    "category": "Business & Strategic Alignment",
+    "type": "text"
+  },
+  {
+    "id": "Q05",
+    "text": "How will the chatbot fit into the current customer journey and omni-channel strategy?",
+    "category": "Business & Strategic Alignment",
+    "type": "text"
+  },
+  {
+    "id": "Q06",
+    "text": "Which top customer intents or journeys do you want to prioritize in the POC? (e.g., balance inquiry, fund transfers, loan eligibility)",
+    "category": "Scope & Use Cases",
+    "type": "text"
+  },
+  {
+    "id": "Q07",
+    "text": "Do we expect transactional capabilities (e.g., fund transfer, bill pay) in the POC or will it be informational only?",
+    "category": "Scope & Use Cases",
+    "type": "text"
+  },
+  {
+    "id": "Q08",
+    "text": "What languages and dialects should the chatbot support initially?",
+    "category": "Scope & Use Cases",
+    "type": "text"
+  },
+  {
+    "id": "Q09",
+    "text": "What are the compliance boundaries? (e.g., MAS, GDPR, PCI DSS for financial data)",
+    "category": "Scope & Use Cases",
+    "type": "text"
+  },
+  {
+    "id": "Q10",
+    "text": "What integration points are required in the POC? (Core banking system, CRM, KYC, payment gateways)",
+    "category": "Scope & Use Cases",
+    "type": "text"
+  },
+  {
+    "id": "Q11",
+    "text": "Is the chatbot expected to be voice-enabled or text-only for the POC?",
+    "category": "Technology & Integration",
+    "type": "text"
+  },
+  {
+    "id": "Q12",
+    "text": "Which channels should the chatbot run on first? (Mobile app, web, WhatsApp, SMS, phone IVR)",
+    "category": "Technology & Integration",
+    "type": "text"
+  },
+  {
+    "id": "Q13",
+    "text": "What is the preferred AI/NLP stack or do we have flexibility? (e.g., Azure AI, AWS Lex, Google Dialogflow, OpenAI)",
+    "category": "Technology & Integration",
+    "type": "text"
+  },
+  {
+    "id": "Q14",
+    "text": "Are there existing APIs or middleware for banking transactions, or will we need to develop new ones?",
+    "category": "Technology & Integration",
+    "type": "text"
+  },
+  {
+    "id": "Q15",
+    "text": "What authentication method will the chatbot use for secure interactions? (OTP, biometrics, SSO, device binding)",
+    "category": "Technology & Integration",
+    "type": "text"
+  },
+  {
+    "id": "Q16",
+    "text": "What is the escalation process when the chatbot cannot resolve an issue? (Seamless handoff to human agents, live chat, callback)",
+    "category": "Risk, Governance & Operations",
+    "type": "text"
+  },
+  {
+    "id": "Q17",
+    "text": "Who will own the chatbot\u2019s knowledge base and content updates after POC? (In-house team, vendor, hybrid)",
+    "category": "Risk, Governance & Operations",
+    "type": "text"
+  },
+  {
+    "id": "Q18",
+    "text": "What is the plan for monitoring and improving intent accuracy and conversation quality during and after POC?",
+    "category": "Risk, Governance & Operations",
+    "type": "text"
+  },
+  {
+    "id": "Q19",
+    "text": "What bias, ethics, and fairness checks will we implement for AI responses in banking contexts?",
+    "category": "Risk, Governance & Operations",
+    "type": "text"
+  },
+  {
+    "id": "Q20",
+    "text": "What is the desired go-live timeline and how does it align with other ongoing digital banking projects?",
+    "category": "Risk, Governance & Operations",
+    "type": "text"
+  },
+  {
+    "id": "Q21",
+    "text": "Do you want me to prepare that checklist next?",
+    "category": "Infrastructure, AI Readiness & Security",
+    "type": "text"
+  },
+  {
+    "id": "Q22",
+    "text": "also add another 10 questions what is the infrastructure they have currently? Like H100GPU?",
+    "category": "Infrastructure, AI Readiness & Security",
+    "type": "text"
+  },
+  {
+    "id": "Q23",
+    "text": "What is the current hosting environment for banking applications? (On-premises data center, private cloud, public cloud \u2014 AWS/Azure/GCP, hybrid)",
+    "category": "Infrastructure, AI Readiness & Security",
+    "type": "text"
+  },
+  {
+    "id": "Q24",
+    "text": "Do you have access to high-performance compute for AI workloads? (e.g., NVIDIA H100/A100 GPUs, TPUs, high-memory CPU clusters)",
+    "category": "Infrastructure, AI Readiness & Security",
+    "type": "text"
+  },
+  {
+    "id": "Q25",
+    "text": "Is there an existing enterprise AI platform or ML Ops framework in place? (e.g., Databricks, Azure ML, SageMaker, Vertex AI)",
+    "category": "Infrastructure, AI Readiness & Security",
+    "type": "text"
+  },
+  {
+    "id": "Q26",
+    "text": "What NLP/NLU engines or LLMs are already licensed or approved for banking use?",
+    "category": "Infrastructure, AI Readiness & Security",
+    "type": "text"
+  },
+  {
+    "id": "Q27",
+    "text": "Are there approved AI security controls in place for GenAI/LLM use in regulated environments?",
+    "category": "Infrastructure, AI Readiness & Security",
+    "type": "text"
+  },
+  {
+    "id": "Q28",
+    "text": "Do you have an API management layer for securely exposing banking services to the chatbot? (e.g., Apigee, Kong, Mulesoft)",
+    "category": "Infrastructure, AI Readiness & Security",
+    "type": "text"
+  },
+  {
+    "id": "Q29",
+    "text": "What is the network latency tolerance for real-time conversational flows across your customer channels?",
+    "category": "Infrastructure, AI Readiness & Security",
+    "type": "text"
+  },
+  {
+    "id": "Q30",
+    "text": "Are there existing monitoring and observability tools for AI and chatbot workloads? (e.g., Prometheus, Grafana, Datadog, Elastic)",
+    "category": "Infrastructure, AI Readiness & Security",
+    "type": "text"
+  }
+]
