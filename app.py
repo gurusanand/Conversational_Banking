@@ -581,12 +581,15 @@ def page_admin(cfg):
                                 st.success("MongoDB connection test: Success!")
                             else:
                                 st.error("MongoDB not connected.")
+                        
                         with st.expander("Filters"):
                             org = st.text_input("Organization contains")
                             submitter = st.text_input("Submitted by contains")
                             status = st.multiselect("Status", ["submitted","analyzed"], default=[])
                             limit = st.number_input("Max records", 1, 1000, 100)
-
+                        
+                        st.dataframe(df, use_container_width=True)
+                        sel = st.selectbox("Open record", options=[""] + df["id"].tolist())
                         query = {}
                         if org: query["org.name"] = {"$regex": org, "$options":"i"}
                         if submitter: query["submitted_by"] = {"$regex": submitter, "$options":"i"}
@@ -770,8 +773,7 @@ def page_admin(cfg):
                     }
                     for r in rows
                 ])
-                st.dataframe(df, use_container_width=True)
-                sel = st.selectbox("Open record", options=[""] + df["id"].tolist())
+            
             if sel:
                 doc = col.find_one({"_id": ObjectId(sel)})
                 st.json(doc)
