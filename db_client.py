@@ -3,16 +3,17 @@ from pymongo import MongoClient
 import os
 
 def get_db():
-    uri = os.getenv("MONGO_URI", "")
+    import streamlit as st
+    uri = st.secrets.get("MONGO_URI", "")
     if not uri:
         return None
     client = MongoClient(uri, serverSelectionTimeoutMS=3000)
-    # Prefer MONGO_DATABASE from .env, fallback to MONGO_DB, then config default
-    db_name = os.getenv("MONGO_DATABASE") or os.getenv("MONGO_DB") or "conversational_banking"
+    db_name = st.secrets.get("MONGO_DATABASE", "conversational_banking")
     return client[db_name]
 
 def mongo_ping():
-    uri = os.getenv("MONGO_URI", "")
+    import streamlit as st
+    uri = st.secrets.get("MONGO_URI", "")
     if not uri:
         return False, "MONGO_URI not set"
     try:
