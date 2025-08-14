@@ -103,7 +103,7 @@ def header_bar():
     if st.session_state.get('role'):
         try:
             db = get_db()
-            if db:
+            if db is not None:
                 st.success("MongoDB connection test: Success!")
             else:
                 st.error("MongoDB not connected.")
@@ -128,7 +128,7 @@ def header_bar():
             pass
         try:
             db = get_db()
-            if db:
+            if db is not None:
                 mongo_status = "✅ MongoDB Connected"
         except Exception:
             pass
@@ -323,7 +323,7 @@ def page_survey(cfg, role):
         # Save to Mongo
         db = get_db()
         col = None
-        if db:
+        if db is not None:
             col = db[cfg["MONGO"]["collection_name"]]
 
         org_col1, org_col2 = st.columns(2)
@@ -495,7 +495,7 @@ def page_survey(cfg, role):
         st.warning("No scores available. Report not generated.")
 
     # Save to Mongo if we have a current_doc_id and scores
-    if "current_doc_id" in st.session_state and get_db() and 'sc' in locals():
+    if "current_doc_id" in st.session_state and get_db() is not None and 'sc' in locals():
         from bson import ObjectId
         db = get_db()
         col = db[cfg["MONGO"]["collection_name"]]
@@ -881,7 +881,7 @@ def page_admin(cfg):
     _header()
     rows = []
     db = get_db()
-    if not db:
+    if db is None:
         st.info("MONGO_URI not set or pymongo missing — admin features disabled.")
     else:
         col = db[cfg["MONGO"]["collection_name"]]
