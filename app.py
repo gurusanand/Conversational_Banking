@@ -9,10 +9,7 @@ import streamlit as st
 import pandas as pd
 
 # Optional deps
-try:
-    from pymongo import MongoClient
-except Exception:
-    MongoClient = None
+from db.client import get_db, mongo_ping
 
 try:
     from openai import OpenAI
@@ -26,15 +23,7 @@ def load_cfg():
     cfg.read("config.ini", encoding="utf-8")
     return cfg
 
-@st.cache_resource
-def get_mongo():
-    uri = os.getenv("MONGO_URI", "")
-    if not uri or MongoClient is None:
-        return None
-    try:
-        return MongoClient(uri)
-    except Exception:
-        return None
+## get_mongo is now replaced by get_db from db.client
 
 @st.cache_data
 def get_questions(_cfg: configparser.ConfigParser) -> List[Dict[str, Any]]:
@@ -898,11 +887,21 @@ def page_admin(cfg):
 
     _header()
     rows = []
-    client = get_mongo()
-    if not client:
+    db = get_db()
+    if not db:
         st.info("MONGO_URI not set or pymongo missing — admin features disabled.")
     else:
-        db = client[cfg["MONGO"]["db_name"]]; col = db[cfg["MONGO"]["collection_name"]]
+        col = db[cfg["MONGO"]["collection_name"]]
+    # Admin MongoDB health check button
+    import ssl, certifi
+    if st.button("Test Mongo Connectivity", key="admin_test_mongo_connectivity"):
+        ok, msg = mongo_ping()
+        if ok:
+            st.success(f"✅ {msg}")
+            st.caption(f"OpenSSL: {ssl.OPENSSL_VERSION}")
+            st.caption(f"Certifi CA: {certifi.where()}")
+        else:
+            st.error(f"❌ {msg}")
 
         with st.expander("Filters"):
             org = st.text_input("Organization contains")
