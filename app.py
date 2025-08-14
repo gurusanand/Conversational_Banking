@@ -902,9 +902,9 @@ def page_admin(cfg):
     _header()
     rows = []
     db = get_db()
+    col = None
     if db is None:
         st.info("MONGO_URI not set or pymongo missing — admin features disabled.")
-        col = None
     else:
         col = db[cfg["MONGO"]["collection_name"]]
         # Use same connection test as user role
