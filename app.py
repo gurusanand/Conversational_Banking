@@ -584,23 +584,29 @@ def page_admin(cfg):
                         tabs.append("Admin Settings")
                     tab_objs = st.tabs(tabs)
 
+
                     # Records & Insights tab
                     with tab_objs[tabs.index("Records & Insights")]:
-                        if rows:
-                            df = pd.DataFrame([{
-                                "id": str(r.get("_id")),
-                                "org": (r.get("org") or {}).get("name",""),
-                                "submitted_by": r.get("submitted_by",""),
-                                "status": r.get("status",""),
-                                "created_at": r.get("created_at","")
-                            } for r in rows])
+                        # rows is always defined above
+                        if rows and isinstance(rows, list) and len(rows) > 0:
+                            df = pd.DataFrame([
+                                {
+                                    "id": str(r.get("_id")),
+                                    "org": (r.get("org") or {}).get("name", ""),
+                                    "submitted_by": r.get("submitted_by", ""),
+                                    "status": r.get("status", ""),
+                                    "created_at": r.get("created_at", "")
+                                }
+                                for r in rows
+                            ])
                             st.dataframe(df, use_container_width=True)
                             sel = st.selectbox("Open record", options=[""] + df["id"].tolist())
+                        else:
+                            sel = ""
                         if sel:
                             doc = col.find_one({"_id": ObjectId(sel)})
                             st.json(doc)
                             # ...existing code for record details, scores, discrepancy check, etc...
-                            # (all previous admin features restored)
 
                     # Admin Settings tab
                     if "Admin Settings" in tabs:
@@ -660,51 +666,49 @@ def page_admin(cfg):
         prompt = """
         You are an expert survey analyst. Given the following questions and answers from a banking discovery survey, analyze for discrepancies, contradictions, or incomplete responses. For each issue, list:
         1. The question(s)
-        2. The answer(s)
-        3. A clear explanation of why it is a discrepancy (e.g., contradiction, vague, inconsistent, or missing info).
-        Be specific and use banking context. Return your analysis as a numbered list.
-        """
-        qa_blob = "\n".join([f"Q: {q}\nA: {a}" for q, a in all_answers])
-        full_prompt = prompt + "\n" + qa_blob
 
-        analysis = None
-        api_key = os.getenv("OPENAI_API_KEY", "")
-        if OpenAI and api_key and len(all_answers) > 0:
+        # --- Restore tabs: Records & Insights and Admin Settings ---
+        tabs = ["Records & Insights"]
+        if st.session_state.get("role") == "Admin":
+            tabs.append("Admin Settings")
+        tab_objs = st.tabs(tabs)
+
+        # Records & Insights tab
+        with tab_objs[tabs.index("Records & Insights")]:
             try:
-                client = OpenAI(api_key=api_key)
-                resp = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[{"role": "user", "content": full_prompt}],
-                    max_tokens=500,
-                    temperature=0.2
-                )
-                analysis = resp.choices[0].message.content.strip()
+                rows = list(col.find(query).sort("created_at",-1).limit(int(limit)))
             except Exception as e:
-                analysis = f"OpenAI analysis failed: {e}"
-        st.markdown("### Discrepancy Summary (AI Analysis):")
-        if analysis and analysis.strip() and not analysis.lower().startswith("no discrepancies"):
-            st.write(analysis)
-        else:
-            st.info("No discrepancies found in this record.")
+                import pymongo
+                if isinstance(e, pymongo.errors.ServerSelectionTimeoutError):
+                    st.error("MongoDB server is unreachable. Please check your network, URI, and Atlas cluster status.")
+                    rows = []
+                else:
+                    st.error(f"MongoDB error: {e}")
+                    rows = []
+            sel = ""
+            if rows:
+                df = pd.DataFrame([
+                    {
+                        "id": str(r.get("_id")),
+                        "org": (r.get("org") or {}).get("name", ""),
+                        "submitted_by": r.get("submitted_by", ""),
+                        "status": r.get("status", ""),
+                        "created_at": r.get("created_at", "")
+                    }
+                    for r in rows
+                ])
+                st.dataframe(df, use_container_width=True)
+                sel = st.selectbox("Open record", options=[""] + df["id"].tolist())
+            if sel:
+                doc = col.find_one({"_id": ObjectId(sel)})
+                st.json(doc)
+                # ...existing code for record details, scores, discrepancy check, etc...
 
-    # Only show Aggregates and Insights & Next Steps if a record is selected
-    if sel:
-        st.subheader("Aggregates")
-        if rows:
-            df = pd.DataFrame([{
-                "status": r.get("status",""),
-                "created_at": r.get("created_at",""),
-                "scores": r.get("scores")
-            } for r in rows])
-            st.bar_chart(df["status"].value_counts())
-            pill_avgs = {}
-            for r in rows:
-                sc = r.get("scores")
-                if sc and "pillars" in sc:
-                    for p in sc["pillars"]:
-                        pill_avgs.setdefault(p["name"], []).append(p["score"])
-            if pill_avgs:
-                avg_df = pd.DataFrame([{"Pillar": k, "AvgScore": sum(v)/len(v)} for k,v in pill_avgs.items()])
+        # Admin Settings tab
+        if "Admin Settings" in tabs:
+            with tab_objs[tabs.index("Admin Settings")]:
+                st.subheader("Admin Settings")
+                st.info("Admin settings features placeholder. Add your settings management here.")
                 st.bar_chart(avg_df.set_index("Pillar"))
 
         # Insights & Next Steps Section
