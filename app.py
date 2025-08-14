@@ -443,10 +443,13 @@ def page_survey(cfg, role):
         pdf.ln(5)
         pdf.cell(0, 10, "How Scores Are Calculated:", ln=True)
         pdf.multi_cell(0, 10, "Scores are calculated by scanning all answers for pillar-specific keywords. Each keyword hit adds points to the relevant pillar, with a base score of 1 per pillar. The total score per pillar is capped at 20. Pillar stages are assigned based on thresholds: Nascent (1+), Emerging (5+), Developing (10+), Advanced (15+), Leading (20). The overall score is the sum of all pillar scores.")
-        try:
-            pdf_bytes = pdf.output(dest='S').encode('utf-8')
-        except UnicodeEncodeError:
-            pdf_bytes = pdf.output(dest='S').encode('latin1')
+        import unicodedata
+        def to_ascii(text):
+            return unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
+        # Clean all text before adding to PDF
+        for i in range(len(pdf.pages)):
+            pdf.pages[i] = to_ascii(pdf.pages[i])
+        pdf_bytes = pdf.output(dest='S').encode('latin1')
         b64 = base64.b64encode(pdf_bytes).decode()
         href = f'<a href="data:application/pdf;base64,{b64}" download="CB_Discovery_Insights_Report.pdf">Download PDF Report</a>'
         st.markdown(href, unsafe_allow_html=True)
