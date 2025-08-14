@@ -282,7 +282,14 @@ def page_survey(cfg, role):
     st.subheader("Step 2 — Open‑Ended + Dynamic Follow‑ups")
     num_open = int(cfg["APP"]["num_open_ended"])
     k_follow = int(cfg["APP"]["num_followups_per_open"])
-    open_prompts = json.loads(cfg["QUESTIONS"]["open_ended_prompts"])
+    # Defensive: ensure QUESTIONS section and open_ended_prompts exist
+    if "QUESTIONS" in cfg and "open_ended_prompts" in cfg["QUESTIONS"]:
+        try:
+            open_prompts = json.loads(cfg["QUESTIONS"]["open_ended_prompts"])
+        except Exception:
+            open_prompts = [f"Describe area {i+1}..." for i in range(num_open)]
+    else:
+        open_prompts = [f"Describe area {i+1}..." for i in range(num_open)]
 
     open_blocks = []
     for i in range(num_open):
