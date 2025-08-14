@@ -613,7 +613,6 @@ def page_admin(cfg):
             pdf.add_page()
             pdf.set_font("Arial", size=12)
             pdf.cell(0, 10, to_ascii("Conversational Banking Discovery Insights Report"), ln=True, align="C")
-            pdf.ln(5)
             if analyzed:
                 latest = analyzed[0]
                 scores = latest["scores"]
@@ -694,26 +693,6 @@ def page_admin(cfg):
                 st.write(analysis)
             else:
                 st.info("No discrepancies found in this record.")
-    pdf.cell(0, 10, to_ascii(f"{p['name']}:"), ln=True)
-    for s in steps:
-        pdf.cell(0, 10, to_ascii(f"- {s}"), ln=True)
-pdf.ln(5)
-pdf.cell(0, 10, to_ascii("Discrepancies Found:"), ln=True)
-if discrepancy_summary:
-    for d in discrepancy_summary:
-        pdf.cell(0, 10, to_ascii(f"Record {d['id']}:"), ln=True)
-        for issue in d["issues"]:
-            pdf.cell(0, 10, to_ascii(f"- {issue}"), ln=True)
-else:
-    pdf.cell(0, 10, to_ascii("No discrepancies found in analyzed records."), ln=True)
-pdf.ln(5)
-pdf.cell(0, 10, to_ascii("How Scores Are Calculated:"), ln=True)
-pdf.multi_cell(0, 10, to_ascii("Scores are calculated by scanning all answers for pillar-specific keywords. Each keyword hit adds points to the relevant pillar, with a base score of 1 per pillar. The total score per pillar is capped at 20. Pillar stages are assigned based on thresholds: Nascent (1+), Emerging (5+), Developing (10+), Advanced (15+), Leading (20). The overall score is the sum of all pillar scores."))
-# Save PDF to memory and provide download link
-pdf_bytes = pdf.output(dest='S').encode('latin1')
-b64 = base64.b64encode(pdf_bytes).decode()
-href = f'<a href="data:application/pdf;base64,{b64}" download="CB_Discovery_Insights_Report.pdf">Download PDF Report</a>'
-st.markdown(href, unsafe_allow_html=True)
 # ...existing code...
 # After showing selected record details, show Discrepancy Check for that record
 if sel:
