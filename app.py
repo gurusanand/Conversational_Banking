@@ -614,16 +614,20 @@ def page_admin(cfg):
     if org: query["org.name"] = {"$regex": org, "$options":"i"}
     if submitter: query["submitted_by"] = {"$regex": submitter, "$options":"i"}
     if status: query["status"] = {"$in": status}
-    try:
-        rows = list(col.find(query).sort("created_at",-1).limit(int(limit)))
-    except Exception as e:
-        import pymongo
-        if isinstance(e, pymongo.errors.ServerSelectionTimeoutError):
-            st.error("MongoDB server is unreachable. Please check your network, URI, and Atlas cluster status.")
-            rows = []
-        else:
-            st.error(f"MongoDB error: {e}")
-            rows = []
+    rows = []
+    if col is None:
+        st.error("MongoDB collection is not available. Please check your configuration and connection.")
+    else:
+        try:
+            rows = list(col.find(query).sort("created_at",-1).limit(int(limit)))
+        except Exception as e:
+            import pymongo
+            if isinstance(e, pymongo.errors.ServerSelectionTimeoutError):
+                st.error("MongoDB server is unreachable. Please check your network, URI, and Atlas cluster status.")
+                rows = []
+            else:
+                st.error(f"MongoDB error: {e}")
+                rows = []
 
     # Records & Insights tab
     with tab_objs[tabs.index("Records & Insights")]:
