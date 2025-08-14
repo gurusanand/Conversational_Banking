@@ -556,7 +556,28 @@ def page_admin(cfg):
         if st.session_state.get("role") == "Admin":
             tabs.append("Admin Settings")
         tab_objs = st.tabs(tabs)
-    # Only show Admin Settings tab if user is Admin
+    # Only show tab content for the selected tab
+    with tab_objs[tabs.index("Records & Insights")]:
+        # ...existing code for Records & Insights tab...
+        import io
+        from fpdf import FPDF
+        import base64
+        sel = ""
+        rows = []
+        # Insights & Next Steps Section
+        if sel:
+            st.subheader("Insights & Next Steps")
+            if rows:
+                # Find the most recent analyzed record with scores
+                analyzed = [r for r in rows if r.get("scores")]
+                # Discrepancy summary across all analyzed records
+                discrepancy_summary = []
+                for r in analyzed:
+                    issues = []
+                    for q in r.get("answers",{}).get("fixed",[]):
+                        ans = q.get("answer","")
+                        if not ans or len(str(ans).strip()) < 3:
+                            issues.append(f"Missing or too short answer for question: {q.get('question','')}")
     if "Admin Settings" in tabs:
         with tab_objs[tabs.index("Admin Settings")]:
             st.markdown("### Manage Fixed Questions")
