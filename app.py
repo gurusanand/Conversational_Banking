@@ -510,8 +510,11 @@ def page_survey(cfg, role):
         st.toast("Scores saved to MongoDB.")
 
 def page_admin(cfg):
-    # MongoDB diagnostics block
-    if col is not None:
+    db = get_db()
+    col = None
+    if db is not None:
+        col = db[cfg["MONGO"]["collection_name"]]
+        # MongoDB diagnostics block
         try:
             test_doc = col.find_one()
             if test_doc is not None:
