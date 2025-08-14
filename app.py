@@ -9,7 +9,7 @@ import streamlit as st
 import pandas as pd
 
 # Optional deps
-from db.client import get_db, mongo_ping
+from db_client import get_db, mongo_ping
 
 try:
     from openai import OpenAI
