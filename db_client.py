@@ -7,7 +7,8 @@ def get_db():
     if not uri:
         return None
     client = MongoClient(uri, serverSelectionTimeoutMS=3000)
-    db_name = os.getenv("MONGO_DB", "conversational_banking")
+    # Prefer MONGO_DATABASE from .env, fallback to MONGO_DB, then config default
+    db_name = os.getenv("MONGO_DATABASE") or os.getenv("MONGO_DB") or "conversational_banking"
     return client[db_name]
 
 def mongo_ping():
