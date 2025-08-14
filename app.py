@@ -24,9 +24,6 @@ def load_cfg():
         files = cfg.read("config.ini", encoding="utf-8")
         if not files:
             st.error("[ERROR] config.ini not found or unreadable.")
-            st.write("[DEBUG] config.ini not found or unreadable.")
-        else:
-            st.write("[DEBUG] config.ini loaded successfully.")
     except Exception as e:
         st.error(f"[ERROR] Failed to load config.ini: {e}")
         st.write(f"[DEBUG] Exception loading config.ini: {e}")
