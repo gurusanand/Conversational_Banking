@@ -510,6 +510,20 @@ def page_survey(cfg, role):
         st.toast("Scores saved to MongoDB.")
 
 def page_admin(cfg):
+    # MongoDB diagnostics block
+    if col is not None:
+        try:
+            test_doc = col.find_one()
+            if test_doc is not None:
+                st.success("MongoDB test query succeeded. Collection is accessible.")
+            else:
+                st.info("MongoDB connected, but collection is empty or not accessible.")
+        except Exception as e:
+            import pymongo
+            if isinstance(e, pymongo.errors.ServerSelectionTimeoutError):
+                st.error("MongoDB server is unreachable during test query. Please check your network, URI, and Atlas cluster status.")
+            else:
+                st.error(f"MongoDB test query error: {e}")
     # Only show Admin Console header and tabs once
     if not st.session_state.get("admin_tabs_rendered"):
         st.subheader("Admin Console")
