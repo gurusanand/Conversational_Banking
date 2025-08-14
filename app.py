@@ -1,3 +1,4 @@
+st.write("[DEBUG] App starting.")
 import os, json, time, configparser, re
 from bson import ObjectId
 from dotenv import load_dotenv
@@ -19,8 +20,18 @@ except Exception:
 st.set_page_config(page_title="Conversational Banking – Pre‑POC (v4)", layout="wide")
 
 def load_cfg():
+    st.write("[DEBUG] Loading config.ini...")
     cfg = configparser.ConfigParser()
-    cfg.read("config.ini", encoding="utf-8")
+    try:
+        files = cfg.read("config.ini", encoding="utf-8")
+        if not files:
+            st.error("[ERROR] config.ini not found or unreadable.")
+            st.write("[DEBUG] config.ini not found or unreadable.")
+        else:
+            st.write("[DEBUG] config.ini loaded successfully.")
+    except Exception as e:
+        st.error(f"[ERROR] Failed to load config.ini: {e}")
+        st.write(f"[DEBUG] Exception loading config.ini: {e}")
     return cfg
 
 ## get_mongo is now replaced by get_db from db.client
@@ -91,12 +102,15 @@ def login_screen(cfg):
             (role=="Admin" and pwd==auth.get("admin_password","")) or
             (role=="Data Infrastructure" and pwd==auth.get("data_infrastructure_password",""))
         )
+        st.write(f"[DEBUG] Login attempted for role: {role}, username: {username}, valid: {valid}")
         if valid and username.strip():
             st.session_state["role"] = role
             st.session_state["username"] = username.strip()
+            st.write(f"[DEBUG] Session state set. Triggering rerun.")
             st.rerun()
         else:
             st.error("Invalid credentials or missing username.")
+            st.write(f"[DEBUG] Login failed. Credentials or username invalid.")
 
 def header_bar():
     # MongoDB diagnostic block
@@ -567,6 +581,15 @@ def page_admin(cfg):
                         if submitter: query["submitted_by"] = {"$regex": submitter, "$options":"i"}
                         if status: query["status"] = {"$in": status}
 
+                    # Only define and use query/limit once for filtering
+                    query = {}
+                    org = st.text_input("Organization contains", key="admin_org_filter")
+                    submitter = st.text_input("Submitted by contains", key="admin_submitter_filter")
+                    status = st.multiselect("Status", ["submitted","analyzed"], default=[], key="admin_status_filter")
+                    limit = st.number_input("Max records", 1, 1000, 100, key="admin_limit_filter")
+                    if org: query["org.name"] = {"$regex": org, "$options":"i"}
+                    if submitter: query["submitted_by"] = {"$regex": submitter, "$options":"i"}
+                    if status: query["status"] = {"$in": status}
                     try:
                         rows = list(col.find(query).sort("created_at",-1).limit(int(limit)))
                     except Exception as e:
@@ -714,7 +737,6 @@ def page_admin(cfg):
             with tab_objs[tabs.index("Admin Settings")]:
                 st.subheader("Admin Settings")
                 st.info("Admin settings features placeholder. Add your settings management here.")
-                st.bar_chart(avg_df.set_index("Pillar"))
 
         # Insights & Next Steps Section
         st.subheader("Insights & Next Steps")
@@ -752,13 +774,17 @@ def page_admin(cfg):
 # --- MAIN PAGE ROUTING ---
 if __name__ == "__main__":
     cfg = load_cfg()
+    st.write(f"[DEBUG] Main routing. Session role: {st.session_state.get('role')}")
     if not st.session_state.get("role"):
+        st.write("[DEBUG] Showing login screen.")
         login_screen(cfg)
     else:
         role = st.session_state.get("role")
+        st.write(f"[DEBUG] Routing for role: {role}")
         if role == "Admin":
             page_admin(cfg)
         elif role in ["User", "Head", "Data Infrastructure"]:
             page_survey(cfg, role)
         else:
             st.error("Unknown role. Please login again.")
+            st.write(f"[DEBUG] Unknown role encountered: {role}")
