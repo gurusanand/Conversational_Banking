@@ -656,48 +656,7 @@ def page_admin(cfg):
                     config.write(f)
                 st.success("Dynamic follow-up prompts updated.")
                 st.experimental_rerun()
-    # Removed duplicate Admin Console heading
-    tabs = ["Records & Insights"]
-    if st.session_state.get("role") == "Admin":
-        tabs.append("Admin Settings")
-    tab_objs = st.tabs(tabs)
-    # Only show Admin Settings tab if user is Admin
-    if "Admin Settings" in tabs:
-        with tab_objs[tabs.index("Admin Settings")]:
-            st.markdown("### Manage Fixed Questions")
-            qfile = "questions_fixed.json"
-            # Load questions
-            try:
-                with open(qfile, "r", encoding="utf-8") as f:
-                    fixed_questions = json.load(f)
-            except Exception:
-                fixed_questions = []
-
-            # Edit/Delete existing questions
-            for idx, q in enumerate(fixed_questions):
-                exp = st.expander(f"{q.get('id','Q?')}: {q.get('text','')[:60]}", expanded=False)
-                with exp:
-                    new_text = st.text_area("Question Text", value=q.get("text",""), key=f"qtext_{idx}")
-                    new_type = st.selectbox("Type", ["text","select","multiselect","likert"], index=["text","select","multiselect","likert"].index(q.get("type","text")), key=f"qtype_{idx}")
-                    new_cat = st.text_input("Category", value=q.get("category",""), key=f"qcat_{idx}")
-                    if st.button("Save Changes", key=f"saveq_{idx}"):
-                        fixed_questions[idx]["text"] = new_text
-                        fixed_questions[idx]["type"] = new_type
-                        fixed_questions[idx]["category"] = new_cat
-                        with open(qfile, "w", encoding="utf-8") as f:
-                            json.dump(fixed_questions, f, indent=2)
-                        st.success("Question updated.")
-                    if st.button("Delete Question", key=f"delq_{idx}"):
-                        fixed_questions.pop(idx)
-                        with open(qfile, "w", encoding="utf-8") as f:
-                            json.dump(fixed_questions, f, indent=2)
-                        st.warning("Question deleted.")
-                        st.experimental_rerun()
-
-            st.markdown("---")
-            st.markdown("### Add New Fixed Question")
-            new_id = st.text_input("ID", value=f"Q{len(fixed_questions)+1}", key="newqid")
-            new_text = st.text_area("Question Text", key="newqtext")
+    # Removed duplicate Admin Console heading and second tab rendering
             new_type = st.selectbox("Type", ["text","select","multiselect","likert"], key="newqtype")
             new_cat = st.text_input("Category", key="newqcat")
             if st.button("Add Question", key="addq"):
