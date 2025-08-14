@@ -748,11 +748,6 @@ def page_admin(cfg):
                             st.markdown(f"- {s}")
             else:
                 st.info("No analyzed records with scores found for insights.")
-        page_survey(cfg, role)
-    elif role == "Admin":
-        page_admin(cfg)
-    else:
-        st.error("Unknown role. Please login again.")
 
 # --- MAIN PAGE ROUTING ---
 if __name__ == "__main__":
@@ -761,9 +756,9 @@ if __name__ == "__main__":
         login_screen(cfg)
     else:
         role = st.session_state.get("role")
-        if role in ["User", "Head", "Data Infrastructure"]:
-            page_survey(cfg, role)
-        elif role == "Admin":
+        if role == "Admin":
             page_admin(cfg)
+        elif role in ["User", "Head", "Data Infrastructure"]:
+            page_survey(cfg, role)
         else:
             st.error("Unknown role. Please login again.")
