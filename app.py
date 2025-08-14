@@ -538,6 +538,8 @@ def page_survey(cfg, role):
         st.toast("Scores saved to MongoDB.")
 
 def page_admin(cfg):
+    db = get_db()
+    col = None
     # Show actual collection names in the connected database for debugging
     if db is not None:
         try:
@@ -549,12 +551,10 @@ def page_admin(cfg):
     # --- Diagnostic block for MongoDB connection and config ---
     st.markdown('---')
     st.info(f"MongoDB URI: {os.getenv('MONGO_URI')}")
-    db_type = type(db) if 'db' in locals() and db is not None else 'NoneType'
-    col_type = type(col) if 'col' in locals() and col is not None else 'NoneType'
+    db_type = type(db) if db is not None else 'NoneType'
+    col_type = type(col) if col is not None else 'NoneType'
     st.info(f"MongoDB Database: {os.getenv('MONGO_DATABASE') or os.getenv('MONGO_DB') or cfg['MONGO'].get('db_name','')} (type: {db_type})")
     st.info(f"MongoDB Collection: {cfg['MONGO'].get('collection_name','')} (type: {col_type})")
-    col = None
-    db = get_db()
     sel = ""
     def to_ascii(text):
         return str(text).encode('ascii', 'ignore').decode()
