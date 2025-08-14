@@ -603,19 +603,19 @@ def page_admin(cfg):
                             sel = st.selectbox("Open record", options=[""] + df["id"].tolist())
                         else:
                             sel = ""
-                        if sel:
-                            doc = col.find_one({"_id": ObjectId(sel)})
-                            st.json(doc)
-                            # ...existing code for record details, scores, discrepancy check, etc...
-
-                    # Admin Settings tab
-                    if "Admin Settings" in tabs:
-                        with tab_objs[tabs.index("Admin Settings")]:
-                            st.subheader("Admin Settings")
-                            st.info("Admin settings features placeholder. Add your settings management here.")
-            "created_at": r.get("created_at","")
-        } for r in rows])
-        st.dataframe(df, use_container_width=True)
+                        if rows:
+                            df_data = []
+                            for r in rows:
+                                df_data.append({
+                                    "id": str(r.get("_id")),
+                                    "org": (r.get("org") or {}).get("name", ""),
+                                    "submitted_by": r.get("submitted_by", ""),
+                                    "status": r.get("status", ""),
+                                    "created_at": r.get("created_at", "")
+                                })
+                            df = pd.DataFrame(df_data)
+                            st.dataframe(df, use_container_width=True)
+                            sel = st.selectbox("Open record", options=[""] + df["id"].tolist())
         sel = st.selectbox("Open record", options=[""] + df["id"].tolist())
     if sel:
         doc = col.find_one({"_id": ObjectId(sel)})
@@ -666,7 +666,12 @@ def page_admin(cfg):
         prompt = """
         You are an expert survey analyst. Given the following questions and answers from a banking discovery survey, analyze for discrepancies, contradictions, or incomplete responses. For each issue, list:
         1. The question(s)
+        2. The answer(s)
+        3. The discrepancy or issue found
+        4. Suggestions to resolve or clarify
 
+        Only report issues that are clear, significant, or could impact survey validity. Be concise and specific.
+        """
         # --- Restore tabs: Records & Insights and Admin Settings ---
         tabs = ["Records & Insights"]
         if st.session_state.get("role") == "Admin":
