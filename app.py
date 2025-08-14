@@ -1,3 +1,4 @@
+import streamlit as st
 st.write("[DEBUG] App starting.")
 import os, json, time, configparser, re
 from bson import ObjectId
@@ -6,7 +7,6 @@ load_dotenv()
 from datetime import datetime
 from typing import List, Dict, Any
 
-import streamlit as st
 import pandas as pd
 
 # Optional deps
