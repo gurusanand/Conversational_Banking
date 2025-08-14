@@ -540,6 +540,14 @@ def page_survey(cfg, role):
 def page_admin(cfg):
     db = get_db()
     col = None
+    collection_name = cfg["MONGO"].get("collection_name", "")
+    if db is not None and collection_name:
+        try:
+            col = db[collection_name]
+        except Exception as e:
+            st.error(f"Could not access collection '{collection_name}': {e}")
+    elif not collection_name:
+        st.error("MongoDB collection name is missing in config.")
     # Show actual collection names in the connected database for debugging
     if db is not None:
         try:
