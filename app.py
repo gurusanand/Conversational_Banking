@@ -656,7 +656,7 @@ def page_admin(cfg):
                     config.write(f)
                 st.success("Dynamic follow-up prompts updated.")
                 st.experimental_rerun()
-    st.subheader("Admin Console")
+    # Removed duplicate Admin Console heading
     tabs = ["Records & Insights"]
     if st.session_state.get("role") == "Admin":
         tabs.append("Admin Settings")
