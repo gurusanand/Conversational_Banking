@@ -787,6 +787,16 @@ def page_admin(cfg):
                 st.markdown("### Pillar Insights:")
                 for p in pillars:
                     st.markdown(f"- **{p['name']}**: {p['score']} ({p['stage']})")
+                st.markdown("---")
+                st.markdown("#### How Overall Score is Calculated")
+                st.info("""
+**Score Calculation Logic:**
+- For each pillar, answers are scanned for pillar-specific keywords.
+- Each keyword hit adds 2 points to the pillar, with a base score of 1 per pillar.
+- The total score per pillar is capped at 20.
+- Pillar stages are assigned based on thresholds: Nascent (1+), Emerging (5+), Developing (10+), Advanced (15+), Leading (20).
+- The **Overall Score** is the sum of all pillar scores.
+                """)
                 # Next Steps from scoring_rules.json if available
                 scoring_path = os.path.join(os.path.dirname(__file__), "scoring_rules.json")
                 next_steps = {}
