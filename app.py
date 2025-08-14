@@ -102,14 +102,11 @@ def header_bar():
     # MongoDB diagnostic block
     if st.session_state.get('role'):
         try:
-            uri = os.getenv("MONGO_URI", "")
-            # st.write(f"MongoDB URI: {uri}")
-            if MongoClient:
-                client = MongoClient(uri, serverSelectionTimeoutMS=3000)
-                client.server_info()  # Will throw if cannot connect
+            db = get_db()
+            if db:
                 st.success("MongoDB connection test: Success!")
             else:
-                st.error("pymongo is not installed.")
+                st.error("MongoDB not connected.")
         except Exception as e:
             st.error(f"MongoDB connection test failed: {e}")
     left, mid, right = st.columns([0.25,0.5,0.25])
@@ -130,12 +127,9 @@ def header_bar():
         except Exception:
             pass
         try:
-            uri = os.getenv("MONGO_URI", "")
-            if MongoClient and uri:
-                client = MongoClient(uri, serverSelectionTimeoutMS=3000)
-                dbs = client.list_database_names()
-                if dbs is not None:
-                    mongo_status = "✅ MongoDB Connected"
+            db = get_db()
+            if db:
+                mongo_status = "✅ MongoDB Connected"
         except Exception:
             pass
         st.write(openai_status)
@@ -327,10 +321,9 @@ def page_survey(cfg, role):
             return
 
         # Save to Mongo
-        client = get_mongo()
+        db = get_db()
         col = None
-        if client:
-            db = client[cfg["MONGO"]["db_name"]]
+        if db:
             col = db[cfg["MONGO"]["collection_name"]]
 
         org_col1, org_col2 = st.columns(2)
@@ -502,10 +495,10 @@ def page_survey(cfg, role):
         st.warning("No scores available. Report not generated.")
 
     # Save to Mongo if we have a current_doc_id and scores
-    if "current_doc_id" in st.session_state and get_mongo() and 'sc' in locals():
+    if "current_doc_id" in st.session_state and get_db() and 'sc' in locals():
         from bson import ObjectId
-        client = get_mongo()
-        db = client[cfg["MONGO"]["db_name"]]; col = db[cfg["MONGO"]["collection_name"]]
+        db = get_db()
+        col = db[cfg["MONGO"]["collection_name"]]
         col.update_one({"_id": ObjectId(st.session_state["current_doc_id"])}, {"$set": {"scores": sc, "status":"analyzed"}})
         st.toast("Scores saved to MongoDB.")
 
