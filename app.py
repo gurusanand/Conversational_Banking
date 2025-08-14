@@ -549,20 +549,6 @@ def page_admin(cfg):
     elif not collection_name:
         st.error("MongoDB collection name is missing in config.")
     # Show actual collection names in the connected database for debugging
-    if db is not None:
-        try:
-            collections = db.list_collection_names()
-            st.info(f"Collections in DB: {collections}")
-        except Exception as e:
-            st.warning(f"Could not list collections: {e}")
-    st.info(f"Configured collection name: {cfg['MONGO'].get('collection_name','')}")
-    # --- Diagnostic block for MongoDB connection and config ---
-    st.markdown('---')
-    st.info(f"MongoDB URI: {os.getenv('MONGO_URI')}")
-    db_type = type(db) if db is not None else 'NoneType'
-    col_type = type(col) if col is not None else 'NoneType'
-    st.info(f"MongoDB Database: {os.getenv('MONGO_DATABASE') or os.getenv('MONGO_DB') or cfg['MONGO'].get('db_name','')} (type: {db_type})")
-    st.info(f"MongoDB Collection: {cfg['MONGO'].get('collection_name','')} (type: {col_type})")
     sel = ""
     def to_ascii(text):
         return str(text).encode('ascii', 'ignore').decode()
@@ -843,17 +829,13 @@ if __name__ == "__main__":
     st.markdown(f"**MongoDB Status:** {mongo_status}")
     st.markdown(f"**OpenAI Status:** {openai_status}")
 
-    st.write(f"[DEBUG] Main routing. Session role: {st.session_state.get('role')}")
     if not st.session_state.get("role"):
-        st.write("[DEBUG] Showing login screen.")
         login_screen(cfg)
     else:
         role = st.session_state.get("role")
-        st.write(f"[DEBUG] Routing for role: {role}")
         if role == "Admin":
             page_admin(cfg)
         elif role in ["User", "Head", "Data Infrastructure"]:
             page_survey(cfg, role)
         else:
             st.error("Unknown role. Please login again.")
-            st.write(f"[DEBUG] Unknown role encountered: {role}")
