@@ -4,3 +4,5 @@ python-dotenv
 openai>=1.0.0
 pandas
 fpdf
+dnspython 
+certifi
