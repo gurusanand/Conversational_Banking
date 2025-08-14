@@ -696,18 +696,19 @@ def page_admin(cfg):
     sel = ""
     rows = []
     # Insights & Next Steps Section
-    st.subheader("Insights & Next Steps")
-    if rows:
-        # Find the most recent analyzed record with scores
-        analyzed = [r for r in rows if r.get("scores")]
-        # Discrepancy summary across all analyzed records
-        discrepancy_summary = []
-        for r in analyzed:
-            issues = []
-            for q in r.get("answers",{}).get("fixed",[]):
-                ans = q.get("answer","")
-                if not ans or len(str(ans).strip()) < 3:
-                    issues.append(f"Missing or too short answer for question: {q.get('question','')}")
+    if sel:
+        st.subheader("Insights & Next Steps")
+        if rows:
+            # Find the most recent analyzed record with scores
+            analyzed = [r for r in rows if r.get("scores")]
+            # Discrepancy summary across all analyzed records
+            discrepancy_summary = []
+            for r in analyzed:
+                issues = []
+                for q in r.get("answers",{}).get("fixed",[]):
+                    ans = q.get("answer","")
+                    if not ans or len(str(ans).strip()) < 3:
+                        issues.append(f"Missing or too short answer for question: {q.get('question','')}")
             for op in r.get("answers",{}).get("open",[]):
                 if not op.get("answer","") or len(str(op.get("answer","")).strip()) < 3:
                     issues.append(f"Missing or too short open-ended answer: {op.get('prompt','')}")
