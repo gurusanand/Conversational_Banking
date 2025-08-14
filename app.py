@@ -541,7 +541,7 @@ def page_admin(cfg):
         with left:
             st.caption("Conversational Banking – Admin Console (v4)")
         with right:
-            if st.button("Logout", help="Click to end your session."):
+            if st.button("Logout", help="Click to end your session.", key="admin_logout_btn"):
                 for k in ["role","username","current_doc_id","fixed_answers","open_blocks"]:
                     if k in st.session_state:
                         del st.session_state[k]
