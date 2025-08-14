@@ -554,13 +554,10 @@ def page_admin(cfg):
     st.info(f"MongoDB Database: {os.getenv('MONGO_DATABASE') or os.getenv('MONGO_DB') or cfg['MONGO'].get('db_name','')} (type: {db_type})")
     st.info(f"MongoDB Collection: {cfg['MONGO'].get('collection_name','')} (type: {col_type})")
     col = None
-    # cfg is passed as argument, so no need to redefine unless used outside
+    db = get_db()
     sel = ""
     def to_ascii(text):
         return str(text).encode('ascii', 'ignore').decode()
-        def to_ascii(text):
-            return str(text).encode('ascii', 'ignore').decode()
-    db = get_db()
 
     # --- Restore full admin features ---
     def _header():
