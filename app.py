@@ -349,9 +349,16 @@ def page_survey(cfg, role):
             "submitted_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         if col is not None:
-            res = col.insert_one(doc)
-            st.session_state["current_doc_id"] = str(res.inserted_id)
-            st.success("Survey saved to MongoDB.")
+            try:
+                res = col.insert_one(doc)
+                st.session_state["current_doc_id"] = str(res.inserted_id)
+                st.success("Survey saved to MongoDB.")
+            except Exception as e:
+                import pymongo
+                if isinstance(e, pymongo.errors.ServerSelectionTimeoutError):
+                    st.error("MongoDB server is unreachable during insert. Please check your network, URI, and Atlas cluster status.")
+                else:
+                    st.error(f"MongoDB insert error: {e}")
         else:
             st.info("MONGO_URI not set or pymongo missing — skipped DB save.")
 
