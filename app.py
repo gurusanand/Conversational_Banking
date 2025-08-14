@@ -538,6 +538,14 @@ def page_survey(cfg, role):
         st.toast("Scores saved to MongoDB.")
 
 def page_admin(cfg):
+    # Show actual collection names in the connected database for debugging
+    if db is not None:
+        try:
+            collections = db.list_collection_names()
+            st.info(f"Collections in DB: {collections}")
+        except Exception as e:
+            st.warning(f"Could not list collections: {e}")
+    st.info(f"Configured collection name: {cfg['MONGO'].get('collection_name','')}")
     # --- Diagnostic block for MongoDB connection and config ---
     st.markdown('---')
     st.info(f"MongoDB URI: {os.getenv('MONGO_URI')}")
