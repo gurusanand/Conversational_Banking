@@ -4,5 +4,5 @@ python-dotenv
 openai>=1.0.0
 pandas
 fpdf
-dnspython 
-certifi
+dnspython>=2.4
+certifi>=2024.7.4
