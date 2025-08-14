@@ -608,9 +608,9 @@ def page_admin(cfg):
         """)
 
         # PDF report generation
-        pdf = FPDF()
-        pdf.add_page()
         if st.button("Generate PDF Report"):
+            pdf = FPDF()
+            pdf.add_page()
             pdf.set_font("Arial", size=12)
             pdf.cell(0, 10, to_ascii("Conversational Banking Discovery Insights Report"), ln=True, align="C")
             pdf.ln(5)
