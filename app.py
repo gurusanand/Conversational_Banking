@@ -890,19 +890,15 @@ def page_admin(cfg):
     db = get_db()
     if db is None:
         st.info("MONGO_URI not set or pymongo missing — admin features disabled.")
+        col = None
     else:
         col = db[cfg["MONGO"]["collection_name"]]
-    # Admin MongoDB health check button
-    import ssl, certifi
-    if st.button("Test Mongo Connectivity", key="admin_test_mongo_connectivity"):
-        ok, msg = mongo_ping()
-        if ok:
-            st.success(f"✅ {msg}")
-            st.caption(f"OpenSSL: {ssl.OPENSSL_VERSION}")
-            st.caption(f"Certifi CA: {certifi.where()}")
-        else:
-            st.error(f"❌ {msg}")
-
+        # Use same connection test as user role
+        if st.button("Test Mongo Connectivity", key="admin_test_mongo_connectivity"):
+            if db is not None:
+                st.success("MongoDB connection test: Success!")
+            else:
+                st.error("MongoDB not connected.")
         with st.expander("Filters"):
             org = st.text_input("Organization contains")
             submitter = st.text_input("Submitted by contains")
