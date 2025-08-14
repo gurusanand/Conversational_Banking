@@ -734,8 +734,9 @@ def page_admin(cfg):
                     st.markdown(f"**{q['id']}** — {q['text']}")
                     new_text = st.text_area("Question Text", value=q['text'], key=f"admin_qtext_{q['id']}")
                     new_type = st.selectbox("Type", options=["text","select","multiselect","likert"], index=["text","select","multiselect","likert"].index(q.get("type","text")), key=f"admin_qtype_{q['id']}")
+                    new_category = st.text_input("Category", value=q.get("category",""), key=f"admin_qcat_{q['id']}")
                     new_required = st.checkbox("Required", value=q.get("required",False), key=f"admin_qreq_{q['id']}")
-                    edited_questions.append({**q, "text": new_text, "type": new_type, "required": new_required})
+                    edited_questions.append({**q, "text": new_text, "type": new_type, "category": new_category, "required": new_required})
                 save_btn = st.form_submit_button("Save Changes")
             if save_btn:
                 cfg["QUESTIONS"]["questions_json"] = json.dumps(edited_questions, ensure_ascii=False)
