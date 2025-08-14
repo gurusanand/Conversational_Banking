@@ -535,6 +535,16 @@ def page_survey(cfg, role):
         st.toast("Scores saved to MongoDB.")
 
 def page_admin(cfg):
+    # --- Admin page header with Logout button ---
+    header_col1, header_col2 = st.columns([0.8, 0.2])
+    with header_col1:
+        st.caption("Conversational Banking – Admin Console (v4)")
+    with header_col2:
+        if st.button("Logout", help="Click to end your session.", key="admin_logout_btn"):
+            for k in ["role","username","current_doc_id","fixed_answers","open_blocks"]:
+                if k in st.session_state:
+                    del st.session_state[k]
+            st.rerun()
     db = get_db()
     col = None
     collection_name = cfg["MONGO"].get("collection_name", "")
