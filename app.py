@@ -296,17 +296,10 @@ def page_survey(cfg, role):
     if "QUESTIONS" in cfg and "open_ended_prompts" in cfg["QUESTIONS"]:
         val = cfg["QUESTIONS"]["open_ended_prompts"]
         try:
-            # If already a list, use directly
-            if isinstance(val, list):
-                open_prompts = val
-            else:
-                # Try to parse JSON
-                open_prompts = json.loads(val)
-                # If still not a list, fallback
-                if not isinstance(open_prompts, list):
-                    open_prompts = [str(open_prompts)]
+            open_prompts = json.loads(val)
+            if not isinstance(open_prompts, list):
+                open_prompts = [str(open_prompts)]
         except Exception:
-            # Fallback to default prompts
             open_prompts = [f"Describe area {i+1}..." for i in range(num_open)]
     else:
         open_prompts = [f"Describe area {i+1}..." for i in range(num_open)]
