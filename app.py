@@ -295,6 +295,9 @@ def page_survey(cfg, role):
     open_prompts = []
     if "QUESTIONS" in cfg and "open_ended_prompts" in cfg["QUESTIONS"]:
         val = cfg["QUESTIONS"]["open_ended_prompts"]
+        # Preprocess: convert single quotes to double quotes for JSON compatibility
+        if val and "'" in val and '"' not in val:
+            val = val.replace("'", '"')
         try:
             open_prompts = json.loads(val)
             if not isinstance(open_prompts, list):
