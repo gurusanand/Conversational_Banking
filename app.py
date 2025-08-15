@@ -292,20 +292,34 @@ def page_survey(cfg, role):
     num_open = int(cfg["APP"]["num_open_ended"])
     k_follow = int(cfg["APP"]["num_followups_per_open"])
     # Robustly parse open_ended_prompts from config
+    import ast
     open_prompts = []
+    debug_info = {}
     if "QUESTIONS" in cfg and "open_ended_prompts" in cfg["QUESTIONS"]:
-        val = cfg["QUESTIONS"]["open_ended_prompts"]
+        val = cfg["QUESTIONS"]["open_ended_prompts"].strip()
+        debug_info['raw_val'] = val
         # Preprocess: convert single quotes to double quotes for JSON compatibility
         if val and "'" in val and '"' not in val:
             val = val.replace("'", '"')
+            debug_info['preprocessed_val'] = val
         try:
             open_prompts = json.loads(val)
+            debug_info['json_loads'] = open_prompts
             if not isinstance(open_prompts, list):
                 open_prompts = [str(open_prompts)]
-        except Exception:
-            open_prompts = [f"Describe area {i+1}..." for i in range(num_open)]
+        except Exception as e_json:
+            debug_info['json_error'] = str(e_json)
+            try:
+                open_prompts = ast.literal_eval(val)
+                debug_info['ast_literal_eval'] = open_prompts
+                if not isinstance(open_prompts, list):
+                    open_prompts = [str(open_prompts)]
+            except Exception as e_ast:
+                debug_info['ast_error'] = str(e_ast)
+                open_prompts = [f"Describe area {i+1}..." for i in range(num_open)]
     else:
         open_prompts = [f"Describe area {i+1}..." for i in range(num_open)]
+    st.write("[DEBUG] open_ended_prompts parsing:", debug_info)
 
     open_blocks = []
     for i in range(num_open):
