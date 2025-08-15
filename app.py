@@ -319,7 +319,6 @@ def page_survey(cfg, role):
                 open_prompts = [f"Describe area {i+1}..." for i in range(num_open)]
     else:
         open_prompts = [f"Describe area {i+1}..." for i in range(num_open)]
-    st.write("[DEBUG] open_ended_prompts parsing:", debug_info)
 
     open_blocks = []
     for i in range(num_open):
